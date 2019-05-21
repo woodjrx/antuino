@@ -18,7 +18,6 @@ long spans[] = {
   10000000l,
    5000000l,
    1000000l,
-   
     500000l,
     100000l,
      50000l,
@@ -103,7 +102,7 @@ const int PROGMEM vswr[] = {
 1,
 10,
 10,
-10 
+10
 };
 
 
@@ -111,7 +110,7 @@ void active_delay(int delay_by){
   unsigned long timeStart = millis();
 
   while (millis() - timeStart <= delay_by) {
-      //Background Work      
+      //Background Work
   }
 }
 
@@ -119,7 +118,7 @@ int tuningClicks = 0;
 int tuningSpeed = 0;
 
 void updateDisplay(){
-  sprintf(b, "%ldK, %ldK/div", frequency/1000, spanFreq/10000); 
+  sprintf(b, "%ldK, %ldK/div", frequency/1000, spanFreq/10000);
   GLCD.DrawString(b, 20, 57);
 }
 
@@ -146,10 +145,10 @@ int calibrateClock(){
   prev_calibration = xtal_freq_calibrated;
   xtal_freq_calibrated = 27000000l;
 
-  si5351aSetFrequency_clk1(10000000l);  
+  si5351aSetFrequency_clk1(10000000l);
   ltoa(xtal_freq_calibrated - 27000000l, c, 10);
   GLCD.FillRect(0,40,50,15, WHITE);
-  GLCD.DrawString(c, 4, 45);     
+  GLCD.DrawString(c, 4, 45);
 
   while (!btnDown())
   {
@@ -162,11 +161,11 @@ int calibrateClock(){
     else 
       continue; //don't update the frequency or the display
 
-    si5351aSetFrequency_clk1(10000000l);  
-      
+    si5351aSetFrequency_clk1(10000000l);
+
     ltoa(xtal_freq_calibrated - 27000000l, c, 10);
     GLCD.FillRect(0,40,50,15, WHITE);
-    GLCD.DrawString(c, 4, 45);     
+    GLCD.DrawString(c, 4, 45);
   }
 
   while(btnDown())
@@ -190,19 +189,19 @@ int readOpen(unsigned long f){
     delay(50);
   }
   delay(1000);
-  
+
   return r/10;
 }
 
 int calibrateMeter(){
-  
+
   GLCD.ClearScreen();
   GLCD.DrawString("Disconnect Antenna", 0, 0);
   GLCD.DrawString("port and press Button", 0, 10);
   GLCD.DrawString("to calibrate SWR", 0, 20);
   GLCD.DrawString("OK", 10, 42);
   GLCD.DrawRect(5,35,20,20);
-    
+
   //wait for a button down
   while(!btnDown())
     active_delay(50);
@@ -210,7 +209,7 @@ int calibrateMeter(){
   GLCD.ClearScreen();
   GLCD.DrawString("Calibrating.....", 10, 25);
   delay(1000);
-  
+
   int i, r;
   mode = MODE_ANTENNA_ANALYZER;
   delay(100);
@@ -225,13 +224,13 @@ int calibrateMeter(){
   r = readOpen(440000000l);
   Serial.print("open reading of UHF is ");Serial.println(r);
   EEPROM.put(OPEN_UHF, r);
-  
+
   menuOn = 0;
- 
+
   GLCD.ClearScreen();
   GLCD.DrawString("Done!",10,25);
   delay(1000);
-  
+
   //switch off just the tracking source
   si5351aOutputOff(SI_CLK0_CONTROL);
   takeReading(centerFreq);
@@ -274,25 +273,25 @@ void takeReading(long newfreq){
     break;
     case MODE_NETWORK_ANALYZER:
       si5351aSetFrequency_clk2(local_osc);
-      si5351aOutputOff(SI_CLK1_CONTROL);        
+      si5351aOutputOff(SI_CLK1_CONTROL);
       si5351aSetFrequency_clk0(newfreq);
     break;
     default:
-      si5351aSetFrequency_clk2(local_osc);  
+      si5351aSetFrequency_clk2(local_osc);
       si5351aSetFrequency_clk1(newfreq);
-      si5351aOutputOff(SI_CLK0_CONTROL);        
-    }      
+      si5351aOutputOff(SI_CLK0_CONTROL);
+    }
     prev_freq = newfreq;
     prevMode = mode;
 //    Serial.print(mode);Serial.print(':');
 //    Serial.println(prev_freq);
-  }     
+  }
 }
 
 void setup() {
-  GLCD.Init();            
+  GLCD.Init();
   GLCD.SelectFont(System5x7);
-  
+
   Serial.begin(9600);
   Serial.print("Listening: \n");
   //setupVSWRGrid();
@@ -300,7 +299,7 @@ void setup() {
 
   Wire.begin();
   Serial.begin(9600);
-  Serial.flush();  
+  Serial.flush();
   Serial.println(F("*Antuino v1.2"));
   analogReference(DEFAULT);
 
@@ -327,19 +326,19 @@ void setup() {
     mode = 0;
 
   spanFreq = spans[selectedSpan];
-  
+
   pinMode(ENC_A, INPUT_PULLUP);
   pinMode(ENC_B, INPUT_PULLUP);
   pinMode(FBUTTON, INPUT_PULLUP);
 
   updateScreen();
-  
+
 //  printLine2(F("Antuino v2.0"));
 
   if (btnDown()){
     calibration_mode();
   }
-  
+
   si5351aOutputOff(SI_CLK0_CONTROL);
   takeReading(frequency);
   updateMeter();
@@ -359,5 +358,5 @@ void loop()
     prev = r;
   }
 
-  delay(50);   
+  delay(50);
 }
