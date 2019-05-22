@@ -3,7 +3,6 @@ int16_t plot_readings[128];
 
 unsigned long f, f1, f2, stepSize;
 
-
 int freq2screen(unsigned long freq){
   unsigned long f1, f2, hz_per_pixel;
 
@@ -26,15 +25,14 @@ void setupPowerGrid(){
   int x, y;
   char p[20];
 
-  GLCD.ClearScreen();  
+  GLCD.ClearScreen();
 
   while(btnDown())
     delay(100);
-    
+
   updateHeading();
 
-
-  //sprintf(p, "%ldK, %ldK/div", centerFreq/1000, spanFreq/10000); 
+  //sprintf(p, "%ldK, %ldK/div", centerFreq/1000, spanFreq/10000);
   //GLCD.DrawString(p, 0, 57);
 
   //draw the horizontal grid
@@ -54,7 +52,7 @@ void setupPowerGrid(){
   for (y = -10; y >= -90; y-= 20){
     itoa(y, p, 10);
     GLCD.DrawString(p, 0, pwr2screen(y)-4);
-  }  
+  }
 
 }
 
@@ -63,11 +61,11 @@ void setupVSWRGrid(){
   int x, y;
   char p[20];
 
-  GLCD.ClearScreen();  
+  GLCD.ClearScreen();
 
   while(btnDown())
     delay(100);
-    
+
   updateHeading();
 
   //draw the horizontal grid
@@ -95,7 +93,7 @@ void setupVSWRGrid(){
     itoa(y/10, p, 10);
     strcat(p, ".");
     GLCD.DrawString(p, 0, vswr2screen(y)-8);
-  }  
+  }
 
   f1 = centerFreq - (spanFreq/2);
   f2 = f1 + spanFreq;
@@ -115,16 +113,16 @@ void setupVSWRGrid(){
       return_loss = 30;
     if (return_loss < 0)
       return_loss = 0;
-    
+
     vswr_reading = pgm_read_word_near(vswr + return_loss);
     plot_readings[i] = vswr_reading;
-    //Serial.print(vswr_reading); Serial.print(' '); Serial.print(f); Serial.print(' ');Serial.print(freq2screen(f)); 
+    //Serial.print(vswr_reading); Serial.print(' '); Serial.print(f); Serial.print(' ');Serial.print(freq2screen(f));
     //Serial.print("x");Serial.print(vswr_reading);Serial.print(' ');Serial.println(vswr2screen(vswr_reading));
 
     if (i == 0)
       GLCD.SetDot(freq2screen(f),vswr2screen(vswr_reading),BLACK);
     else
-      GLCD.DrawLine(i + X_OFFSET-1, vswr2screen(plot_readings[i-1]), i + X_OFFSET, vswr2screen(plot_readings[i])); 
+      GLCD.DrawLine(i + X_OFFSET-1, vswr2screen(plot_readings[i-1]), i + X_OFFSET, vswr2screen(plot_readings[i]));
     i++;
   }
 
@@ -133,14 +131,14 @@ void setupVSWRGrid(){
   powerHeading(current_pos);
   while (!btnDown()){
     i = enc_read();
-    
-    if ((i < 0 && current_pos + i >= 0) || 
+
+    if ((i < 0 && current_pos + i >= 0) ||
       (i > 0 && current_pos + i <= 100)){
       current_pos += i;
-      powerHeading(current_pos); 
+      powerHeading(current_pos);
     }
   }
-  
+
   while(btnDown())
     delay(100);
 }
@@ -151,13 +149,12 @@ void updateCursor(int pos, char*text){
   GLCD.DrawLine(pos+ X_OFFSET, 8, pos + X_OFFSET,9);
 }
 
-
 void powerHeading(int current_pos){
-  
+
   GLCD.FillRect(0,0,127,12, WHITE);
   freqtoa(f1 + (stepSize * current_pos), b);
   GLCD.DrawString(b, 0, 0);
-  
+
   if (mode == MODE_ANTENNA_ANALYZER)
     sprintf (b, " %d.%01d", plot_readings[current_pos]/10,plot_readings[current_pos] % 10);
   else
@@ -171,11 +168,11 @@ void plotPower(){
   int x, y, pwr;
   char p[20];
 
-  GLCD.ClearScreen();  
+  GLCD.ClearScreen();
 
   while(btnDown())
     delay(100);
-    
+
   //draw the horizontal grid
   for (y = 0; y <= 100; y += 20){
     Serial.print("d");
@@ -212,16 +209,16 @@ void plotPower(){
     analogRead(DBM_READING);
     analogRead(DBM_READING);
     analogRead(DBM_READING);
-    
+
     int r = analogRead(DBM_READING)/5 + dbmOffset;
     plot_readings[i] = r;
     Serial.print(plot_readings[i]);
     Serial.print('-');
- 
+
     if (i == 0)
       GLCD.SetDot(X_OFFSET, pwr2screen(plot_readings[i]),BLACK);
     else
-      GLCD.DrawLine(i + X_OFFSET-1, pwr2screen(plot_readings[i-1]), i + X_OFFSET, pwr2screen(plot_readings[i])); 
+      GLCD.DrawLine(i + X_OFFSET-1, pwr2screen(plot_readings[i-1]), i + X_OFFSET, pwr2screen(plot_readings[i]));
     i++;
   }
 
@@ -230,8 +227,8 @@ void plotPower(){
   powerHeading(current_pos);
   while (!btnDown()){
     i = enc_read();
-    
-    if ((i < 0 && current_pos + i >= 0) || 
+
+    if ((i < 0 && current_pos + i >= 0) ||
       (i > 0 && current_pos + i <= 100)){
       current_pos += i;
       powerHeading(current_pos);
@@ -245,7 +242,7 @@ void plotPower(){
       GLCD.DrawLine(current_pos+ X_OFFSET, 8, current_pos + X_OFFSET,11); */
     }
   }
-  
+
   while(btnDown())
     delay(100);
 }

@@ -127,7 +127,8 @@ void updateMeter(){
     vswr_reading = pgm_read_word_near(vswr + return_loss);
     sprintf (c, " %d.%01d", vswr_reading/10, vswr_reading%10);
     percentage = vswr_reading - 10;
-  }else if (mode == MODE_MEASUREMENT_RX){
+  }
+  else if (mode == MODE_MEASUREMENT_RX){
     sprintf(c, "%ddbm", analogRead(DBM_READING)/5 + dbmOffset);
     percentage = 110 + analogRead(DBM_READING)/5 + dbmOffset;
   }

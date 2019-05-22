@@ -136,7 +136,6 @@ int calibrateClock(){
   GLCD.DrawString("Save", 64, 45);
   GLCD.DrawRect(60,40,35,20);
 
-
   //keep clear of any previous button press
   while (btnDown())
     active_delay(100);
@@ -158,7 +157,7 @@ int calibrateClock(){
       xtal_freq_calibrated += 10;
     else if (knob < 0)
       xtal_freq_calibrated -= 10;
-    else 
+    else
       continue; //don't update the frequency or the display
 
     si5351aSetFrequency_clk1(10000000l);
@@ -292,13 +291,13 @@ void setup() {
   GLCD.Init();
   GLCD.SelectFont(System5x7);
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.print("Listening: \n");
   //setupVSWRGrid();
   b[0]= 0;
 
   Wire.begin();
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.flush();
   Serial.println(F("*Antuino v1.2"));
   analogReference(DEFAULT);

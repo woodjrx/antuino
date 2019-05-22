@@ -33,7 +33,7 @@ void i2cSendRegister (byte regist, byte value){   // Writes "byte" into "regist"
 void si5351aOutputOff(uint8_t clk)
 {
   //i2c_init();
-  
+
   i2cSendRegister(clk, 0x80);   // Refer to SiLabs AN619 to see bit values - 0x80 turns off the output stage
 
   //i2c_exit();
@@ -101,7 +101,7 @@ void si5351aSetFrequency(uint32_t frequency)
   uint32_t denom;
   uint32_t divider;
 
-  divider = 900000000 / frequency;// Calculate the division ratio. 900,000,000 is the maximum internal 
+  divider = 900000000 / frequency;// Calculate the division ratio. 900,000,000 is the maximum internal
                   // PLL frequency: 900MHz
   if (divider % 2) divider--;   // Ensure an even integer division ratio
 
@@ -117,15 +117,15 @@ void si5351aSetFrequency(uint32_t frequency)
 
                   // Set up PLL A with the calculated multiplication ratio
   setupPLL(SI_SYNTH_PLL_A, mult, num, denom);
-                  // Set up MultiSynth divider 0, with the calculated divider. 
-                  // The final R division stage can divide by a power of two, from 1..128. 
+                  // Set up MultiSynth divider 0, with the calculated divider.
+                  // The final R division stage can divide by a power of two, from 1..128.
                   // reprented by constants SI_R_DIV1 to SI_R_DIV128 (see si5351a.h header file)
-                  // If you want to output frequencies below 1MHz, you have to use the 
+                  // If you want to output frequencies below 1MHz, you have to use the
                   // final R division stage
   setupMultisynth(SI_SYNTH_MS_0, divider, SI_R_DIV_1);
-                  // Reset the PLL. This causes a glitch in the output. For small changes to 
+                  // Reset the PLL. This causes a glitch in the output. For small changes to
                   // the parameters, you don't need to reset the PLL, and there is no glitch
-  i2cSendRegister(SI_PLL_RESET, 0xA0);  
+  i2cSendRegister(SI_PLL_RESET, 0xA0);
                   // Finally switch on the CLK0 output (0x4F)
                   // and set the MultiSynth0 input to be PLL A
   i2cSendRegister(SI_CLK1_CONTROL, 0x4F | SI_CLK_SRC_PLL_A);
@@ -142,13 +142,13 @@ void si5351aSetFrequency_clk0(uint32_t frequency)
   uint32_t denom;
   uint32_t divider;
 
-  divider = 900000000 / frequency;// Calculate the division ratio. 900,000,000 is the maximum internal 
+  divider = 900000000 / frequency;// Calculate the division ratio. 900,000,000 is the maximum internal
                   // PLL frequency: 900MHz
   if (divider % 2) divider--;   // Ensure an even integer division ratio
 
   pllFreq = divider * frequency;  // Calculate the pllFrequency: the divider * desired output frequency
   //sprintf(buff,"pllFreq: %ld", (long)pllFreq);
-  //Serial.println(buff);                
+  //Serial.println(buff);
 
   mult = (pllFreq / xtalFreq);    // Determine the multiplier to get to the required pllFrequency
   l = pllFreq % xtalFreq;     // It has three parts:
@@ -160,15 +160,15 @@ void si5351aSetFrequency_clk0(uint32_t frequency)
 
                   // Set up PLL B with the calculated multiplication ratio
   setupPLL(SI_SYNTH_PLL_A, mult, num, denom);
-                  // Set up MultiSynth divider 0, with the calculated divider. 
-                  // The final R division stage can divide by a power of two, from 1..128. 
+                  // Set up MultiSynth divider 0, with the calculated divider.
+                  // The final R division stage can divide by a power of two, from 1..128.
                   // reprented by constants SI_R_DIV1 to SI_R_DIV128 (see si5351a.h header file)
-                  // If you want to output frequencies below 1MHz, you have to use the 
+                  // If you want to output frequencies below 1MHz, you have to use the
                   // final R division stage
   setupMultisynth(SI_SYNTH_MS_0, divider, SI_R_DIV_1);
-                  // Reset the PLL. This causes a glitch in the output. For small changes to 
+                  // Reset the PLL. This causes a glitch in the output. For small changes to
                   // the parameters, you don't need to reset the PLL, and there is no glitch
-  i2cSendRegister(SI_PLL_RESET, 0xA0);  
+  i2cSendRegister(SI_PLL_RESET, 0xA0);
                   // Finally switch on the CLK2 output (0x4F)
                   // and set the MultiSynth0 input to be PLL A
   i2cSendRegister(SI_CLK0_CONTROL, 0x4F | SI_CLK_SRC_PLL_A);
@@ -185,7 +185,7 @@ void si5351aSetFrequency_clk1(uint32_t frequency)
   uint32_t denom;
   uint32_t divider;
 
-  divider = 900000000 / frequency;// Calculate the division ratio. 900,000,000 is the maximum internal 
+  divider = 900000000 / frequency;// Calculate the division ratio. 900,000,000 is the maximum internal
                   // PLL frequency: 900MHz
   if (divider % 2) divider--;   // Ensure an even integer division ratio
 
@@ -201,15 +201,15 @@ void si5351aSetFrequency_clk1(uint32_t frequency)
 
                   // Set up PLL A with the calculated multiplication ratio
   setupPLL(SI_SYNTH_PLL_A, mult, num, denom);
-                  // Set up MultiSynth divider 0, with the calculated divider. 
-                  // The final R division stage can divide by a power of two, from 1..128. 
+                  // Set up MultiSynth divider 0, with the calculated divider.
+                  // The final R division stage can divide by a power of two, from 1..128.
                   // reprented by constants SI_R_DIV1 to SI_R_DIV128 (see si5351a.h header file)
-                  // If you want to output frequencies below 1MHz, you have to use the 
+                  // If you want to output frequencies below 1MHz, you have to use the
                   // final R division stage
   setupMultisynth(SI_SYNTH_MS_1, divider, SI_R_DIV_1);
-                  // Reset the PLL. This causes a glitch in the output. For small changes to 
+                  // Reset the PLL. This causes a glitch in the output. For small changes to
                   // the parameters, you don't need to reset the PLL, and there is no glitch
-  i2cSendRegister(SI_PLL_RESET, 0xA0);  
+  i2cSendRegister(SI_PLL_RESET, 0xA0);
                   // Finally switch on the CLK0 output (0x4F)
                   // and set the MultiSynth0 input to be PLL A
   i2cSendRegister(SI_CLK1_CONTROL, 0x4F | SI_CLK_SRC_PLL_A);
@@ -227,13 +227,13 @@ void si5351aSetFrequency_clk2(uint32_t frequency)
   uint32_t denom;
   uint32_t divider;
 
-  divider = 900000000 / frequency;// Calculate the division ratio. 900,000,000 is the maximum internal 
+  divider = 900000000 / frequency;// Calculate the division ratio. 900,000,000 is the maximum internal
                   // PLL frequency: 900MHz
   if (divider % 2) divider--;   // Ensure an even integer division ratio
 
   pllFreq = divider * frequency;  // Calculate the pllFrequency: the divider * desired output frequency
   //sprintf(buff,"pllFreq: %ld", (long)pllFreq);
-  //Serial.println(buff);                
+  //Serial.println(buff);
 
   mult = (pllFreq / xtalFreq);    // Determine the multiplier to get to the required pllFrequency
   l = pllFreq % xtalFreq;     // It has three parts:
@@ -245,15 +245,15 @@ void si5351aSetFrequency_clk2(uint32_t frequency)
 
                   // Set up PLL B with the calculated multiplication ratio
   setupPLL(SI_SYNTH_PLL_B, mult, num, denom);
-                  // Set up MultiSynth divider 0, with the calculated divider. 
-                  // The final R division stage can divide by a power of two, from 1..128. 
+                  // Set up MultiSynth divider 0, with the calculated divider.
+                  // The final R division stage can divide by a power of two, from 1..128.
                   // reprented by constants SI_R_DIV1 to SI_R_DIV128 (see si5351a.h header file)
-                  // If you want to output frequencies below 1MHz, you have to use the 
+                  // If you want to output frequencies below 1MHz, you have to use the
                   // final R division stage
   setupMultisynth(SI_SYNTH_MS_2, divider, SI_R_DIV_1);
-                  // Reset the PLL. This causes a glitch in the output. For small changes to 
+                  // Reset the PLL. This causes a glitch in the output. For small changes to
                   // the parameters, you don't need to reset the PLL, and there is no glitch
-  i2cSendRegister(SI_PLL_RESET, 0xA0);  
+  i2cSendRegister(SI_PLL_RESET, 0xA0);
                   // Finally switch on the CLK2 output (0x4F)
                   // and set the MultiSynth0 input to be PLL A
   i2cSendRegister(SI_CLK2_CONTROL, 0x4F | SI_CLK_SRC_PLL_B);
