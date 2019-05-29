@@ -70,8 +70,6 @@ void setupVSWRGrid(){
 
   //draw the horizontal grid
   for (y = 0; y <= 100; y += 20){
-    Serial.print("d");
-    Serial.println(vswr2screen(y));
     for (x = X_OFFSET; x <= 100+ X_OFFSET; x += 2)
       GLCD.SetDot(x,vswr2screen(y),BLACK);
   }
@@ -82,9 +80,6 @@ void setupVSWRGrid(){
       f1 = 0;
   f2 = f1 + spanFreq;
   for (f = f1; f <= f2; f += spanFreq/10){
-    Serial.print(f);
-    Serial.print(",");
-    Serial.println(freq2screen(f));
     for (y =0; y <= 50; y += 2)
       GLCD.SetDot(freq2screen(f),y+Y_OFFSET,BLACK);
   }
@@ -100,6 +95,7 @@ void setupVSWRGrid(){
   stepSize = (f2 - f1)/100;
   int i = 0, vswr_reading;
 
+  //Output range and step to serial
   Serial.print("f1 "); Serial.println(f1);
   Serial.print("f2 "); Serial.println(f2);
   Serial.print("step "); Serial.println(stepSize);
@@ -116,6 +112,10 @@ void setupVSWRGrid(){
 
     vswr_reading = pgm_read_word_near(vswr + return_loss);
     plot_readings[i] = vswr_reading;
+
+    //Print plot data to serial
+    Serial.print(f); Serial.print(", "); Serial.println(vswr_reading);
+
     //Serial.print(vswr_reading); Serial.print(' '); Serial.print(f); Serial.print(' ');Serial.print(freq2screen(f));
     //Serial.print("x");Serial.print(vswr_reading);Serial.print(' ');Serial.println(vswr2screen(vswr_reading));
 
@@ -175,8 +175,6 @@ void plotPower(){
 
   //draw the horizontal grid
   for (y = 0; y <= 100; y += 20){
-    Serial.print("d");
-    Serial.println(pwr2screen(y));
     for (x = X_OFFSET; x <= 100+ X_OFFSET; x += 2)
       GLCD.SetDot(x,vswr2screen(y),BLACK);
   }
@@ -202,6 +200,11 @@ void plotPower(){
   stepSize = (f2 - f1)/100;
   int i = 0, vswr_reading;
 
+  //Output range and step to serial
+  Serial.print("f1 "); Serial.println(f1);
+  Serial.print("f2 "); Serial.println(f2);
+  Serial.print("step "); Serial.println(stepSize);
+
   for (f = f1; f < f2; f += stepSize){
     takeReading(f);
     delay(50);
@@ -210,10 +213,12 @@ void plotPower(){
     analogRead(DBM_READING);
     analogRead(DBM_READING);
 
-    int r = analogRead(DBM_READING)/5 + dbmOffset;
+
+   int r = analogRead(DBM_READING)/5 + dbmOffset;
     plot_readings[i] = r;
-    Serial.print(plot_readings[i]);
-    Serial.print('-');
+
+    //Output readings to serial
+    Serial.print(f); Serial.print(", "); Serial.println(plot_readings[i]);
 
     if (i == 0)
       GLCD.SetDot(X_OFFSET, pwr2screen(plot_readings[i]),BLACK);
