@@ -1,6 +1,6 @@
 /**************************************************************************
  Author:    Bruce E. Hall, W8BH
- Date:      31 May 2019
+ Date:      01 Jun 2019
  Hardware:  Antuino, ontaining a Arduino Nano
 
  This is a fork of the Antuino project by AFarhan at:
@@ -10,113 +10,93 @@
  **************************************************************************/
 
 
-#include <glcd.h>
+#include <glcd.h>                       // https://github.com/woodjrx  
 #include <fonts/allFonts.h>
 #include <Wire.h>
 #include <EEPROM.h>
 
-/*
- * TO DO
- * 1. save the last freq, mode
- * 2. plot the powerf
- */
+
+// The following defines map to I/O pins on the embedded arduino NANO
+#define ENC_A                    (A3)
+#define ENC_B                    (A1)
+#define FBUTTON                  (A2)
+#define DBM_READING              (A6)
+
+// The following two variables define which frequencies are plotted.
+// The center frequency is the number displayed on the main screen,
+// and represents the middle frequency that will be plotted.
+// The span is the range of frequencies to be plotted.
+// For example, a freq of 14 MHz and span of 20 MHz will plot
+// from 14-(20/2)= 4 Mhz to 15+(20/2)= 25 MHz.
+ 
+unsigned long centerFreq = 14000000l;      // 14 MHz
+unsigned long spanFreq   = 20000000l;      // 20 MHz
 
 
-int nextChar = 0;
-unsigned long centerFreq=14000000l; //initially set to 25 MHz
-unsigned long spanFreq=25000000l;   //intiially set to 50 MHz
+// The following variables define the spans.  
+// spans[] is a list of possible span choices, 25Mhz to 5 KHz
+
+#define MAX_SPANS 12
 long spans[] = {
-  25000000l,
-  10000000l,
-   5000000l,
-   1000000l,
-   
-    500000l,
-    100000l,
-     50000l,
-     10000l,
-      5000l
+             20000000l, 10000000l,         //  10 MHz spans
+   5000000l,  2000000l,  1000000l,         //   1 MHz spans
+    500000l,   2000001,   100000l,         // 100 kHz spans
+     50000l,    20000l,    10000l,         //  10 kHz spans
+      5000l                                //   1 kHz spans 
 };
 
-int selectedSpan = 0;
-#define MAX_SPANS 8
 
-int enc_prev_state = 3;
+// the following table converts Return Loss numbers into SWR. 
+// The table includes 30 entries, from RL=0 dB to 29 dB.
+// The entry = 10 * VSWR.  For example, notice that the second
+// entry (index 1) is 174.   RL of 1 dB = VSWR of 17.4.
+// The table is stored in program memory to save space for variables
+ 
+const int PROGMEM vswr[] = {
+999, 174, 87,  58,  44,  35,  30,  26,  23,  21,  19,  18,  17,
+16,  15,  14,  14,  13,  13,  12,  12,  12,  12,  11,  11,  11,
+11,  11,  10,  10,  10 
+};
 
-uint32_t xtal_freq_calibrated = 27000000l;
-
-/* I/O ports to read the tuning mechanism */
-#define ENC_A (A3)
-#define ENC_B (A1)
-#define FBUTTON (A2)
 
 /* offsets into the EEPROM storage for calibration */
-#define MASTER_CAL 0
-#define LAST_FREQ 4
-#define OPEN_HF 8
-#define OPEN_VHF 12
-#define OPEN_UHF 16
-#define LAST_SPAN 20
-#define LAST_MODE 24
+#define MASTER_CAL               0
+#define LAST_FREQ                4
+#define OPEN_HF                  8
+#define OPEN_VHF                 12
+#define OPEN_UHF                 16
+#define LAST_SPAN                20
+#define LAST_MODE                24
 
-//to switch on/off various clocks
-#define SI_CLK0_CONTROL  16      // Register definitions
-#define SI_CLK1_CONTROL 17
-#define SI_CLK2_CONTROL 18
+//Register definitions to switch on/off various clocks
+#define SI_CLK0_CONTROL          16      
+#define SI_CLK1_CONTROL          17
+#define SI_CLK2_CONTROL          18
 
-#define IF_FREQ  (24996000l)
-#define MODE_ANTENNA_ANALYZER 0
-#define MODE_MEASUREMENT_RX 1
-#define MODE_NETWORK_ANALYZER 2
-unsigned long mode = MODE_ANTENNA_ANALYZER;
+#define IF_FREQ                  (24996000l)
+#define MODE_ANTENNA_ANALYZER    0
+#define MODE_MEASUREMENT_RX      1
+#define MODE_NETWORK_ANALYZER    2
 
-char b[32], c[32], serial_in[32];
+
+unsigned long mode             = MODE_ANTENNA_ANALYZER;
+int selectedSpan               = 0;
+int enc_prev_state             = 3;
+int nextChar                   = 0;
+uint32_t xtal_freq_calibrated  = 27000000l;
+char b[32],c[32];                               // temporary character arrays
 int return_loss;
-unsigned long frequency = 10000000l;
-int openHF = 96;
-int openVHF = 96;
-int openUHF = 68;
+unsigned long frequency        = 10000000l;
+int openHF                     = 96;
+int openVHF                    = 96;
+int openUHF                    = 68;
+int dbmOffset                  = -114;
+int menuOn                     = 0;
+unsigned long timeOut          = 0;
+int tuningClicks               = 0;
+int tuningSpeed                = 0;
 
-#define DBM_READING (A6)
-int dbmOffset = -114;
 
-int menuOn = 0;
-unsigned long timeOut = 0;
-
-
-const int PROGMEM vswr[] = {
-999,
-174,
-87,
-58,
-44,
-35,
-30,
-26,
-23,
-21,
-19,
-18,
-17,
-16,
-15,
-14,
-14,
-13,
-13,
-12,
-12,
-12,
-12,
-11,
-11,
-11,
-11,
-1,
-10,
-10,
-10 
-};
 
 
 void active_delay(int delay_by){
@@ -127,9 +107,6 @@ void active_delay(int delay_by){
   }
 }
 
-int tuningClicks = 0;
-int tuningSpeed = 0;
-
 void updateDisplay(){
   sprintf(b, "%ldK, %ldK/div", frequency/1000, spanFreq/10000); 
   GLCD.DrawString(b, 20, 57);
@@ -137,8 +114,7 @@ void updateDisplay(){
 
 int calibrateClock(){
   int knob = 0;
-  int32_t prev_calibration;
-  char  *p;
+  //int32_t prev_calibration;
 
   GLCD.ClearScreen();
   GLCD.DrawString("1. Monitor Antenna", 0, 0);
@@ -155,7 +131,7 @@ int calibrateClock(){
     active_delay(100);
   active_delay(100);
 
-  prev_calibration = xtal_freq_calibrated;
+  //prev_calibration = xtal_freq_calibrated;
   xtal_freq_calibrated = 27000000l;
 
   si5351aSetFrequency_clk1(10000000l);  
@@ -202,7 +178,6 @@ int readOpen(unsigned long f){
     delay(50);
   }
   delay(1000);
-  
   return r/10;
 }
 
@@ -342,8 +317,6 @@ void setup() {
   pinMode(FBUTTON, INPUT_PULLUP);
 
   updateScreen();
-  
-//  printLine2(F("Antuino v2.0"));
 
   if (btnDown()){
     calibration_mode();
@@ -358,15 +331,11 @@ int prev = 0;
 void loop()
 {
   doMenu();
- // doTuning2();
-//  checkButton();
-
   int r = analogRead(DBM_READING);
   if (r != prev){
     takeReading(centerFreq);
     updateMeter();
     prev = r;
   }
-
   delay(50);   
 }

@@ -18,6 +18,16 @@ int x1, y1, w, h, x2, y2;
 
 int uiFocus = MENU_CHANGE_MHZ, knob=0, uiSelected = -1;
 
+/*
+ * To do: write better encoder routine!
+int EncoderA = 0;
+
+// The following routine waits for the rotary encoder to spin
+int encoderDirection()
+{
+  
+}
+*/
 
 //returns true if the button is pressed
 int btnDown(){
