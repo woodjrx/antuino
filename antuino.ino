@@ -1,3 +1,15 @@
+/**************************************************************************
+ Author:    Bruce E. Hall, W8BH
+ Date:      31 May 2019
+ Hardware:  Antuino, ontaining a Arduino Nano
+
+ This is a fork of the Antuino project by AFarhan at:
+ https://github.com/afarhan/antuino
+ Also see his website at:  http://www.hfsignals.com/index.php/antuino/
+ 
+ **************************************************************************/
+
+
 #include <glcd.h>
 #include <fonts/allFonts.h>
 #include <Wire.h>
@@ -292,15 +304,12 @@ void takeReading(long newfreq){
 void setup() {
   GLCD.Init();            
   GLCD.SelectFont(System5x7);
-  
-  Serial.begin(9600);
-  Serial.print("Listening: \n");
-  //setupVSWRGrid();
   b[0]= 0;
 
   Wire.begin();
-  Serial.begin(9600);
-  Serial.flush();  
+  Serial.begin(57600);
+  Serial.flush();
+  Serial.println(F("*** W8BH ***"));  
   Serial.println(F("*Antuino v1.2"));
   analogReference(DEFAULT);
 
