@@ -28,8 +28,7 @@ void setupPowerGrid(){
 
   GLCD.ClearScreen();  
 
-  while(btnDown())
-    delay(100);
+  waitForButtonRelease();
     
   updateHeading();
 
@@ -65,8 +64,7 @@ void setupVSWRGrid(){
 
   GLCD.ClearScreen();  
 
-  while(btnDown())
-    delay(100);
+  waitForButtonRelease();
     
   updateHeading();
 
@@ -102,15 +100,15 @@ void setupVSWRGrid(){
   stepSize = (f2 - f1)/100;
   int i = 0, vswr_reading;
 
-  Serial.print("f1 "); Serial.println(f1);
-  Serial.print("f2 "); Serial.println(f2);
-  Serial.print("step "); Serial.println(stepSize);
+  //Serial.print("f1 "); Serial.println(f1);
+  //Serial.print("f2 "); Serial.println(f2);
+  //Serial.print("step "); Serial.println(stepSize);
 
   for (f = f1; f < f2; f += stepSize){
-    takeReading(f);
+    setOscillators(f);
     delay(20);
     //now take the readings
-    return_loss = openReading(f) - analogRead(DBM_READING)/5;
+    return_loss = openReading(f) - readDB();
     if (return_loss > 30)
       return_loss = 30;
     if (return_loss < 0)
@@ -131,7 +129,7 @@ void setupVSWRGrid(){
   int current_pos = 50;
 
   powerHeading(current_pos);
-  while (!btnDown()){
+  while (!button_pressed){
     i = enc_read();
     
     if ((i < 0 && current_pos + i >= 0) || 
@@ -140,9 +138,7 @@ void setupVSWRGrid(){
       powerHeading(current_pos); 
     }
   }
-  
-  while(btnDown())
-    delay(100);
+  button_pressed = false;
 }
 
 void updateCursor(int pos, char*text){
@@ -173,8 +169,7 @@ void plotPower(){
 
   GLCD.ClearScreen();  
 
-  while(btnDown())
-    delay(100);
+  waitForButtonRelease();
     
   //draw the horizontal grid
   for (y = 0; y <= 100; y += 20){
@@ -206,14 +201,14 @@ void plotPower(){
   int i = 0, vswr_reading;
 
   for (f = f1; f < f2; f += stepSize){
-    takeReading(f);
+    setOscillators(f);
     delay(50);
     //now take the readings
     analogRead(DBM_READING);
     analogRead(DBM_READING);
     analogRead(DBM_READING);
     
-    int r = analogRead(DBM_READING)/5 + dbmOffset;
+    int r = readDB() + dbmOffset;
     plot_readings[i] = r;
     Serial.print(plot_readings[i]);
     Serial.print('-');
@@ -228,25 +223,14 @@ void plotPower(){
   int current_pos = 50;
 
   powerHeading(current_pos);
-  while (!btnDown()){
+  while (!button_pressed){
     i = enc_read();
     
     if ((i < 0 && current_pos + i >= 0) || 
       (i > 0 && current_pos + i <= 100)){
       current_pos += i;
       powerHeading(current_pos);
-
-/*      GLCD.FillRect(0,0,127,12, WHITE);
-
-      freqtoa(f1 + (stepSize * current_pos), p);
-      GLCD.DrawString(p, 0, 0);
-      sprintf(p, "%ddbm", plot_readings[current_pos]);
-      GLCD.DrawString(p, 80, 0);
-      GLCD.DrawLine(current_pos+ X_OFFSET, 8, current_pos + X_OFFSET,11); */
     }
   }
-  
-  while(btnDown())
-    delay(100);
+  button_pressed = false;
 }
-
