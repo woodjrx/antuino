@@ -283,23 +283,23 @@ void updateHeading() {
   else if (mode == MODE_NETWORK_ANALYZER)
     strcpy(c, "SNA ");
   
-  //one mhz digit if less than 10 M, two digits if more
+  //format the display according to number of digits needed
 
-   if (centerFreq >= 100000000l){
+   if (centerFreq >= 100000000L){                      // >= 100 MHz?  xxx.xxx.xxx
     strncat(c, b, 3);
     strcat(c, ".");
     strncat(c, &b[3], 3);
     strcat(c, ".");
     strncat(c, &b[6], 3);
   }
-  else if (centerFreq >= 10000000l){
+  else if (centerFreq >= 10000000L){                   // 10-99 MHz?    xx.xxx.xxx
     strncat(c, b, 2);
     strcat(c, ".");
     strncat(c, &b[2], 3);
     strcat(c, ".");
     strncat(c, &b[5], 3);
   }
-  else {
+  else {                                               // < 10 MHz       x.xxx.xxx
     strncat(c, b, 1);
     strcat(c, ".");
     strncat(c, &b[1], 3);    

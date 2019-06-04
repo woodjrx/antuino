@@ -4,7 +4,7 @@
  
  Created by:    Ashar Farhan
  Modified by:   Bruce E. Hall, W8BH
- Last mod:      01 Jun 2019
+ Last mod:      04 Jun 2019
  Hardware:      Antuino board with embedded Arduino Nano
  Environment:   Arduino IDE 1.8.9
 
@@ -48,8 +48,8 @@
 #define FBUTTON                  (A2)             // pin attached to encoder pushbutton
 
 // The folowing defines set the frequency range of the device, in Hz
-#define MIN_FREQ                 10000l           // 10 kHz
-#define MAX_FREQ                 150000000l       // 150 MHz
+#define MIN_FREQ                 100000L          // 100 kHz
+#define MAX_FREQ                 150000000L       // 150 MHz
 
 // Global variables that can be changed by the encoder interrupt routines
 
@@ -66,8 +66,8 @@ volatile uint32_t button_downtime     = 0L;       // ms the button was pushed be
 // For example, a freq of 14 MHz and span of 20 MHz will plot
 // from 14-(20/2)= 4 Mhz to 15+(20/2)= 25 MHz.
  
-unsigned long centerFreq = 14000000l;             // 14 MHz
-unsigned long spanFreq   = 20000000l;             // 20 MHz
+long centerFreq = 14000000L;                      // 14 MHz
+long spanFreq   = 20000000L;                      // 20 MHz
 
 // The following variables define the spans.  
 // spans[] is a list of possible span choices, 25Mhz to 5 KHz
@@ -238,35 +238,35 @@ void setOscillators (long freq){
   static long prevFreq = 0;
   static int prevMode = 0;
   long local_osc;
-  if (prevFreq != freq || prevMode != mode){                           // freq or mode changed
-  
-    if (freq < 20000l) freq = 20000l;
+  if (prevFreq != freq || prevMode != mode){                        // freq or mode changed
+                                                                    // so set oscillators....
+    if (freq < MIN_FREQ) freq = MIN_FREQ;
     if (freq < 150000000l)
     {
-      if (freq < 50000000l)
-        local_osc = freq + IF_FREQ;
+      if (freq < 50000000l)                                         // calculate mixer input
+        local_osc = freq + IF_FREQ;                                 // <50MHz: high-side mixing
       else
-        local_osc = freq - IF_FREQ;
+        local_osc = freq - IF_FREQ;                                 // >50MHz: low-side mixing
     } else {
       freq = freq / 3;
       local_osc = freq - IF_FREQ/3;
     }
  
     switch(mode){
-    case MODE_MEASUREMENT_RX:
-      si5351aSetFrequency_clk2(local_osc);
-      si5351aOutputOff(SI_CLK1_CONTROL);
-      si5351aOutputOff(SI_CLK0_CONTROL);
+    case MODE_MEASUREMENT_RX:                                       // for power measurements:
+      si5351aSetFrequency_clk2(local_osc);                          // you just need receiver
+      si5351aOutputOff(SI_CLK1_CONTROL);                            // (antenna output off)
+      si5351aOutputOff(SI_CLK0_CONTROL);                            // (output port off)
     break;
-    case MODE_NETWORK_ANALYZER:
-      si5351aSetFrequency_clk2(local_osc);
-      si5351aOutputOff(SI_CLK1_CONTROL);        
-      si5351aSetFrequency_clk0(freq);
+    case MODE_NETWORK_ANALYZER:                                     // for network analyzer:
+      si5351aSetFrequency_clk2(local_osc);                          // tune receiver to freq
+      si5351aOutputOff(SI_CLK1_CONTROL);                            // (antanna output off)
+      si5351aSetFrequency_clk0(freq);                               // and transmit on output port
     break;
-    default:  // MODE_ANTENNA_ANALYZER
-      si5351aSetFrequency_clk2(local_osc);  
-      si5351aSetFrequency_clk1(freq);
-      si5351aOutputOff(SI_CLK0_CONTROL);        
+    default:  // MODE_ANTENNA_ANALYZER                              // for antenna analyzer:
+      si5351aSetFrequency_clk2(local_osc);                          // tune receiver to freq
+      si5351aSetFrequency_clk1(freq);                               // and inject signal on ant port
+      si5351aOutputOff(SI_CLK0_CONTROL);                            // (output port off)
     }      
     prevFreq = freq;
     prevMode = mode;
