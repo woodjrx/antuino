@@ -185,46 +185,13 @@ int enc_read() {
 //  END OF IMPROVED ROTARY ENCODER CODE 
 //
 
-
-
-
-
-
 void freqtoa(unsigned long f, char *s){
-  char p[16];
-  
-  memset(p, 0, sizeof(p));
-  ultoa(f, p, DEC);
-  s[0] = 0;
-//  strcpy(s, "FREQ: ");
-
-  //one mhz digit if less than 10 M, two digits if more
-
-   if (f >= 100000000l){
-    strncat(s, p, 3);
-    strcat(s, ".");
-    strncat(s, &p[3], 3);
-    strcat(s, ".");
-    strncat(s, &p[6], 3);
-  }
-  else if (f >= 10000000l){
-    strcat(s, " ");
-    strncat(s, p, 2);
-    strcat(s, ".");
-    strncat(s, &p[2], 3);
-    strcat(s, ".");
-    strncat(s, &p[5], 3);
-  }
-  else {
-    strcat(s, "  ");
-    strncat(s, p, 1);
-    strcat(s, ".");
-    strncat(s, &p[1], 3);    
-    strcat(s, ".");
-    strncat(s, &p[4], 3);
-  }
+  int mhz = f/1000000L;
+  f -= mhz*1000000L;
+  int khz = f/1000;
+  int hz = f - khz*1000;
+  sprintf(s,"%3d.%03d.%03d",mhz,khz,hz);
 }
-
 
 // updateMeter puts a measurement reading & bar graph on the display
 // call with the measurement reading in dB
@@ -282,36 +249,12 @@ void updateHeading() {
     strcpy(c, "PWR ");
   else if (mode == MODE_NETWORK_ANALYZER)
     strcpy(c, "SNA ");
-  
-  //format the display according to number of digits needed
 
-   if (centerFreq >= 100000000L){                      // >= 100 MHz?  xxx.xxx.xxx
-    strncat(c, b, 3);
-    strcat(c, ".");
-    strncat(c, &b[3], 3);
-    strcat(c, ".");
-    strncat(c, &b[6], 3);
-  }
-  else if (centerFreq >= 10000000L){                   // 10-99 MHz?    xx.xxx.xxx
-    strncat(c, b, 2);
-    strcat(c, ".");
-    strncat(c, &b[2], 3);
-    strcat(c, ".");
-    strncat(c, &b[5], 3);
-  }
-  else {                                               // < 10 MHz       x.xxx.xxx
-    strncat(c, b, 1);
-    strcat(c, ".");
-    strncat(c, &b[1], 3);    
-    strcat(c, ".");
-    strncat(c, &b[4], 3);
-  }
-
-  GLCD.DrawString(c, 0, 0);
-
-  itoa(spanFreq/10000, c, 10);
-  strcat(c, "K/d");
-  GLCD.DrawString(c, 128-(strlen(c)*6), 0);
+  freqtoa(centerFreq,c);                          // format frequency for display
+  GLCD.DrawString(c, 0, 0);                       // and draw it
+  itoa(spanFreq/10000, c, 10);                    // convert span to string  
+  strcat(c, "K/d");                               // add units
+  GLCD.DrawString(c, 128-(strlen(c)*6), 0);       // and right justify it on display
 }
 
 

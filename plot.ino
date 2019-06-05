@@ -27,14 +27,8 @@ void setupPowerGrid(){
   char p[20];
 
   GLCD.ClearScreen();  
-
   waitForButtonRelease();
-    
   updateHeading();
-
-
-  //sprintf(p, "%ldK, %ldK/div", centerFreq/1000, spanFreq/10000); 
-  //GLCD.DrawString(p, 0, 57);
 
   //draw the horizontal grid
   for (y = -10; y >= -90; y-= 20){
@@ -63,15 +57,13 @@ void setupVSWRGrid(){
   char p[20];
 
   GLCD.ClearScreen();  
-
-  waitForButtonRelease();
-    
+  waitForButtonRelease();  
   updateHeading();
 
   //draw the horizontal grid
   for (y = 0; y <= 100; y += 20){
-    Serial.print("d");
-    Serial.println(vswr2screen(y));
+    //Serial.print("d");
+    //Serial.println(vswr2screen(y));
     for (x = X_OFFSET; x <= 100+ X_OFFSET; x += 2)
       GLCD.SetDot(x,vswr2screen(y),BLACK);
   }
@@ -82,9 +74,9 @@ void setupVSWRGrid(){
       f1 = 0;
   f2 = f1 + spanFreq;
   for (f = f1; f <= f2; f += spanFreq/10){
-    Serial.print(f);
-    Serial.print(",");
-    Serial.println(freq2screen(f));
+    //Serial.print(f);
+    //Serial.print(",");
+    //Serial.println(freq2screen(f));
     for (y =0; y <= 50; y += 2)
       GLCD.SetDot(freq2screen(f),y+Y_OFFSET,BLACK);
   }
@@ -173,8 +165,8 @@ void plotPower(){
     
   //draw the horizontal grid
   for (y = 0; y <= 100; y += 20){
-    Serial.print("d");
-    Serial.println(pwr2screen(y));
+    //Serial.print("d");
+    //Serial.println(pwr2screen(y));
     for (x = X_OFFSET; x <= 100+ X_OFFSET; x += 2)
       GLCD.SetDot(x,vswr2screen(y),BLACK);
   }
@@ -188,7 +180,6 @@ void plotPower(){
     for (y =0; y <= 50; y += 2)
       GLCD.SetDot(freq2screen(f),y+Y_OFFSET,BLACK);
   }
-
 
   for (y = -80; y <= -20; y += 20){
     itoa(y, p, 10);
