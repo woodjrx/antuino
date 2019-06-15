@@ -258,4 +258,3 @@ void si5351aSetFrequency_clk2(uint32_t frequency)
                   // and set the MultiSynth0 input to be PLL A
   i2cSendRegister(SI_CLK2_CONTROL, 0x4F | SI_CLK_SRC_PLL_B);
 }
-

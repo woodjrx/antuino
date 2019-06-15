@@ -93,29 +93,39 @@ const int PROGMEM vswr[] = {
 11,  11,  10,  10,  10 
 };
 
+const int PROGMEM lut[] = {                              // analog reading @ each attenuation level
+  404, 402, 400, 398, 396, 395, 393, 391, 388, 386,      //  0- 9 dB attenuation
+  384, 383, 380, 376, 374, 369, 366, 363, 359, 356,      // 10-19 dB
+  352, 349, 345, 341, 338, 334, 329, 325, 320, 315,      // 20-29 dB
+  310, 305, 300, 294, 288, 282, 276, 269, 263, 257,      // 30-39 dB
+  251, 245, 238, 232, 225, 218, 211, 205, 198, 192,      // 40-49 dB
+  186, 181, 176, 170, 165, 161, 156, 151, 148, 144,      // 50-59 dB
+  140, 137, 134, 130, 128, 125, 123, 121, 119, 118,      // 60-69 dB
+  116
+};
 
 int mode                       = MODE_ANTENNA_ANALYZER;
 int selectedSpan               = 0;
-uint32_t xtal_freq_calibrated  = 27000000l;
-char b[32],c[32];                               // temporary character arrays
+uint32_t xtal_freq_calibrated  = 27000000L;
+char b[32],c[32];                                        // temporary character arrays
 int return_loss;
 int openHF                     = 96;
 int openVHF                    = 96;
 int openUHF                    = 68;
 int dbmOffset                  = -114;
+int dbmOutputPort              = 0;                      // output port power
 
-
-int readDB() {
-  return analogRead(DBM_READING)/5;                // return #dB steps from AD8307
-                                                   // will require offset to get actual dBm
+int readDbm() {
+  int raw = analogRead(DBM_READING);                     // get analog input from AD8307
+  int i=0;                                               // start with dB attenuation of 0.
+  while((i<70)&&(pgm_read_word_near(lut + i)>raw))       // search the lookup table...
+    i++;                                                 // and find the analog value, so index = dB
+  return (dbmOutputPort-i);                              // dBm =  output port power - attenuation 
 }
 
-void active_delay(int delay_by){
-  unsigned long timeStart = millis();
-
-  while (millis() - timeStart <= delay_by) {
-      //Background Work      
-  }
+int readDB() {
+return analogRead(DBM_READING)/5;                        // return #dB steps from AD8307
+                                                         // will require offset to get actual dBm
 }
 
 void updateDisplay(){
@@ -123,68 +133,28 @@ void updateDisplay(){
   GLCD.DrawString(b, 20, 57);
 }
 
-int calibrateClock(){
-  int knob = 0;
-  //int32_t prev_calibration;
 
-  GLCD.ClearScreen();
-  GLCD.DrawString("1. Monitor Antenna", 0, 0);
-  GLCD.DrawString("  port on 10 MHz freq.", 0, 10);
-  GLCD.DrawString("2. Tune to zerbeat and", 0, 20);
-  GLCD.DrawString("3. Click to Save", 0, 30);
-
-  GLCD.DrawString("Save", 64, 45);
-  GLCD.DrawRect(60,40,35,20);
-
-  waitForButtonRelease();
-
-  //prev_calibration = xtal_freq_calibrated;
-  xtal_freq_calibrated = 27000000l;
-
-  si5351aSetFrequency_clk1(10000000l);  
-  ltoa(xtal_freq_calibrated - 27000000l, c, 10);
-  GLCD.FillRect(0,40,50,15, WHITE);
-  GLCD.DrawString(c, 4, 45);     
-
-  while (!button_pressed)
-  {
-    knob = enc_read();
-
-    if (knob > 0)
-      xtal_freq_calibrated += 10;
-    else if (knob < 0)
-      xtal_freq_calibrated -= 10;
-    else 
-      continue; //don't update the frequency or the display
-
-    si5351aSetFrequency_clk1(10000000l);  
-      
-    ltoa(xtal_freq_calibrated - 27000000l, c, 10);
-    GLCD.FillRect(0,40,50,15, WHITE);
-    GLCD.DrawString(c, 4, 45);     
-  }
-
-  waitForButtonRelease();
-  GLCD.ClearScreen();
-  GLCD.DrawString("Calibration Saved", 0, 25);
-
-  EEPROM.put(MASTER_CAL, xtal_freq_calibrated);
-  delay(2000);
-}
 
 int readOpen(unsigned long f){
-  int i, r;
-  
+   
   setOscillators(f);                                       // set osc outputs according to  mode
   delay(100);                                              // allow time for outputs to settle
-  r = 0;
-  for (i = 0; i < 10; i++){                                // take ten measurements
+  int r = 0;
+  for (int i = 0; i < 10; i++){                            // take ten measurements
     r += readDB();
     delay(50);
   }
   delay(1000);                                             // allow time between calls
   return r/10;                                             // return average of 10 measurements
 }
+
+
+// Calibration works by injecting a signal of known power (-19.5 dBm) onto the receiver (input port), 
+// measuring the voltage that signal creates, and calculating an offset that will turn this result into
+// -19.5 dBm.   Mathematically, reading + offset = -19.5 dBm; rearranged: offset = -19.5 - reading.  
+// For example, if the measured dB reading at 20 MHz (openHF) is 74, the dB offset is
+// calculated as -19.5 - 74 = -93.5.  Now, if an incoming signal measures 35, its calculated power is
+// 35 - 93.5 = -58.5 dBm.
 
 int calibrateMeter(){
   
@@ -238,17 +208,17 @@ void setOscillators (long freq){
   static long prevFreq = 0;
   static int prevMode = 0;
   long local_osc;
-  if (prevFreq != freq || prevMode != mode){                        // freq or mode changed
-                                                                    // so set oscillators....
+  if (prevFreq != freq || prevMode != mode){                        // the freq or mode changed
+                                                                    // so update oscillators....
     if (freq < MIN_FREQ) freq = MIN_FREQ;
-    if (freq < 150000000l)
+    if (freq < 150000000l)                                          // for VHF and HF:
     {
       if (freq < 50000000l)                                         // calculate mixer input
         local_osc = freq + IF_FREQ;                                 // <50MHz: high-side mixing
       else
         local_osc = freq - IF_FREQ;                                 // >50MHz: low-side mixing
     } else {
-      freq = freq / 3;
+      freq = freq / 3;                                              // for UHF, use 3rd harmonic
       local_osc = freq - IF_FREQ/3;
     }
  
@@ -268,7 +238,7 @@ void setOscillators (long freq){
       si5351aSetFrequency_clk1(freq);                               // and inject signal on ant port
       si5351aOutputOff(SI_CLK0_CONTROL);                            // (output port off)
     }      
-    prevFreq = freq;
+    prevFreq = freq;                                                // save new freq & mode
     prevMode = mode;
   }     
 }  
@@ -316,6 +286,8 @@ void setup() {
   updateScreen();                                     // take measurement & show main screen
   Serial.print(F("Center Frequency (Hz): "));         // print out current frequency
   Serial.println(centerFreq,DEC);
+  Serial.print(F("openHF value: "));
+  Serial.println(openHF);
   if (buttonDown()) calibration_mode();               // do CAL if button down on startup
 }
 
@@ -329,9 +301,28 @@ void takeReading()
   }  
 }
 
+// debugReading(): prints AD8307 output to serial port as dBm reading & voltage 
+
+void debugReading() {
+  const int WAIT_TIME = 10000;                // time between readings, in msec
+  static long lastCheck = 0;
+  char output[70];                            // buffer for output string
+  if (millis() > (lastCheck + WAIT_TIME)) {   // have we waiting long enough yet?
+    lastCheck = millis();                     // yes, update wait counter
+    int raw = analogRead(DBM_READING);        // read voltage from AD8307 output
+    float volts = (raw/1024.0) * 5;           // ..convert it into voltage
+    int corrected = readDbm();                // try new lookup table correction
+    sprintf(output,                           // format result into a string
+      "Reading %d dBm (corrected %d dBm).   Raw Data: %3d (%d.%d volts)", 
+       (raw/5)+dbmOffset,  corrected, raw, int(volts), int(volts*100) % 100);
+    Serial.println(output);                   // send result to serial port
+  }
+}
+
 void loop()
 {
   doMenu();                            // handle user input
   takeReading();                       // measure & display result @ displayed frequency 
   delay(40);                           // put some time between analog reads
+  debugReading();                      // periodically write reading to serial port
 }

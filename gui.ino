@@ -167,7 +167,7 @@ void waitForButtonPress()
 // call with numClicks 0 for highest sensitity, add 1 for each addl click required.
 
 int readEncoder(unsigned int numClicks = 0) {
-  static int prevCounter = 0;
+  static int prevCounter = 0;                       // holds last encoder position
   rotary_changed = false;                           // Clear flag
   int change = rotary_counter - prevCounter;        // how many clicks since last call?
   if (abs(change) <= numClicks)                     // not enough clicks?
@@ -176,14 +176,13 @@ int readEncoder(unsigned int numClicks = 0) {
   return (change>0) ? 1:-1;                         // and return +1 for CW rotation, -1 for CCW rotation    
 }
 
-
-int enc_read() {
-  return readEncoder(1);
-}
-
 //
 //  END OF IMPROVED ROTARY ENCODER CODE 
 //
+
+
+// FreqToA():  Converts input frequency to a character string in the format MMM.KKK.HHH
+// Any leading zeros in the MHz slot are suppressed (007.024.000 becomes 7.024.000)
 
 void freqtoa(unsigned long f, char *s){
   int mhz = f/1000000L;
@@ -193,7 +192,7 @@ void freqtoa(unsigned long f, char *s){
   sprintf(s,"%3d.%03d.%03d",mhz,khz,hz);
 }
 
-// updateMeter puts a measurement reading & bar graph on the display
+// updateMeter() puts a measurement reading & bar graph on the display
 // call with the measurement reading in dB
 
 void updateMeter(int reading){
@@ -272,6 +271,55 @@ void drawCalibrationMenu(int selection){
     GLCD.DrawRect(15,35,100,20);  
 }
 
+int calibrateClock(){
+  int knob = 0;
+  //int32_t prev_calibration;
+
+  GLCD.ClearScreen();
+  GLCD.DrawString("1. Monitor Antenna", 0, 0);
+  GLCD.DrawString("  port on 10 MHz freq.", 0, 10);
+  GLCD.DrawString("2. Tune to zerbeat and", 0, 20);
+  GLCD.DrawString("3. Click to Save", 0, 30);
+
+  GLCD.DrawString("Save", 64, 45);
+  GLCD.DrawRect(60,40,35,20);
+
+  waitForButtonRelease();
+
+  //prev_calibration = xtal_freq_calibrated;
+  xtal_freq_calibrated = 27000000l;
+
+  si5351aSetFrequency_clk1(10000000l);  
+  ltoa(xtal_freq_calibrated - 27000000l, c, 10);
+  GLCD.FillRect(0,40,50,15, WHITE);
+  GLCD.DrawString(c, 4, 45);     
+
+  while (!button_pressed)
+  {
+    knob = readEncoder();
+
+    if (knob > 0)
+      xtal_freq_calibrated += 10;
+    else if (knob < 0)
+      xtal_freq_calibrated -= 10;
+    else 
+      continue; //don't update the frequency or the display
+
+    si5351aSetFrequency_clk1(10000000l);  
+      
+    ltoa(xtal_freq_calibrated - 27000000l, c, 10);
+    GLCD.FillRect(0,40,50,15, WHITE);
+    GLCD.DrawString(c, 4, 45);     
+  }
+
+  waitForButtonRelease();
+  GLCD.ClearScreen();
+  GLCD.DrawString("Calibration Saved", 0, 25);
+
+  EEPROM.put(MASTER_CAL, xtal_freq_calibrated);
+  delay(2000);
+}
+
 void calibration_mode(){
   int i, select_freq_cal = 0;
 
@@ -280,7 +328,7 @@ void calibration_mode(){
   waitForButtonRelease();
   
   while(!button_pressed){
-    i = enc_read();
+    i = readEncoder();
     
     if(i > 0 && select_freq_cal == 0){
       select_freq_cal = 1;

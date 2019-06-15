@@ -122,7 +122,7 @@ void setupVSWRGrid(){
 
   powerHeading(current_pos);
   while (!button_pressed){
-    i = enc_read();
+    i = readEncoder();
     
     if ((i < 0 && current_pos + i >= 0) || 
       (i > 0 && current_pos + i <= 100)){
@@ -215,7 +215,7 @@ void plotPower(){
 
   powerHeading(current_pos);
   while (!button_pressed){
-    i = enc_read();
+    i = readEncoder();
     
     if ((i < 0 && current_pos + i >= 0) || 
       (i > 0 && current_pos + i <= 100)){
