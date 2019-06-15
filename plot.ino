@@ -199,7 +199,8 @@ void plotPower(){
     analogRead(DBM_READING);
     analogRead(DBM_READING);
     
-    int r = readDB() + dbmOffset;
+    //int r = readDB() + dbmOffset;                // original method
+    int r = readDbm();                             // LUT corrected dBm
     plot_readings[i] = r;
     Serial.print(plot_readings[i]);
     Serial.print('-');

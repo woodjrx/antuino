@@ -198,6 +198,8 @@ void freqtoa(unsigned long f, char *s){
 void updateMeter(int reading){
   int percentage = 0;
   int vswr_reading;
+  int dBm = reading+dbmOffset;                                      // current method
+  int adjustedDbm = readDbm();                                      // !! try new method
   
   //draw the meter
   GLCD.FillRect(0, 15, 128, 8, WHITE);
@@ -217,12 +219,12 @@ void updateMeter(int reading){
     sprintf (c, " %d.%01d", vswr_reading/10, vswr_reading%10);
     percentage = vswr_reading - 10;
   }else if (mode == MODE_MEASUREMENT_RX){
-    sprintf(c, "%ddbm", reading + dbmOffset);
-    percentage = 110 + reading + dbmOffset;
+    sprintf(c, "%ddbm", adjustedDbm);                               // was: sprintf(c, "%ddbm", dBm);
+    percentage = 100 + adjustedDbm;                                 // was: percentage = 110 + dBm;
   }
   else if (mode == MODE_NETWORK_ANALYZER) {
-    sprintf(c, "%ddbm", reading + dbmOffset);  
-    percentage = 110 + reading + dbmOffset;
+    sprintf(c, "%ddbm", adjustedDbm);                               // was: sprintf(c, "%ddbm", dBm); 
+    percentage = 100 + adjustedDbm;                                 // was: percentage = 110 + dBm;
   }
 
   GLCD.DrawString(c, 0, 15);  
