@@ -1,4 +1,4 @@
-#include <glcd.h>
+#include <openGLCD.h>  /*Available here:  https://bitbucket.org/bperrybap/openglcd/wiki/Home */
 #include <fonts/allFonts.h>
 #include <Wire.h>
 #include <EEPROM.h>
