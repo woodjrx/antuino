@@ -26,14 +26,8 @@ void setupPowerGrid(){
   char p[20];
 
   GLCD.ClearScreen();
-
-  while(btnDown())
-    delay(100);
-
+  waitForButtonRelease();
   updateHeading();
-
-  //sprintf(p, "%ldK, %ldK/div", centerFreq/1000, spanFreq/10000);
-  //GLCD.DrawString(p, 0, 57);
 
   //draw the horizontal grid
   for (y = -10; y >= -90; y-= 20){
@@ -62,14 +56,13 @@ void setupVSWRGrid(){
   char p[20];
 
   GLCD.ClearScreen();
-
-  while(btnDown())
-    delay(100);
-
+  waitForButtonRelease();
   updateHeading();
 
   //draw the horizontal grid
   for (y = 0; y <= 100; y += 20){
+    //Serial.print("d");
+    //Serial.println(vswr2screen(y));
     for (x = X_OFFSET; x <= 100+ X_OFFSET; x += 2)
       GLCD.SetDot(x,vswr2screen(y),BLACK);
   }
@@ -80,6 +73,9 @@ void setupVSWRGrid(){
       f1 = 0;
   f2 = f1 + spanFreq;
   for (f = f1; f <= f2; f += spanFreq/10){
+    //Serial.print(f);
+    //Serial.print(",");
+    //Serial.println(freq2screen(f));
     for (y =0; y <= 50; y += 2)
       GLCD.SetDot(freq2screen(f),y+Y_OFFSET,BLACK);
   }
@@ -101,10 +97,10 @@ void setupVSWRGrid(){
   Serial.print("step "); Serial.println(stepSize);
 
   for (f = f1; f < f2; f += stepSize){
-    takeReading(f);
+    setOscillators(f);
     delay(20);
     //now take the readings
-    return_loss = openReading(f) - analogRead(DBM_READING)/5;
+    return_loss = openReading(f) - readDB();
     if (return_loss > 30)
       return_loss = 30;
     if (return_loss < 0)
@@ -129,8 +125,8 @@ void setupVSWRGrid(){
   int current_pos = 50;
 
   powerHeading(current_pos);
-  while (!btnDown()){
-    i = enc_read();
+  while (!button_pressed){
+    i = readEncoder();
 
     if ((i < 0 && current_pos + i >= 0) ||
       (i > 0 && current_pos + i <= 100)){
@@ -138,9 +134,7 @@ void setupVSWRGrid(){
       powerHeading(current_pos);
     }
   }
-
-  while(btnDown())
-    delay(100);
+  button_pressed = false;
 }
 
 void updateCursor(int pos, char*text){
@@ -170,11 +164,12 @@ void plotPower(){
 
   GLCD.ClearScreen();
 
-  while(btnDown())
-    delay(100);
+  waitForButtonRelease();
 
   //draw the horizontal grid
   for (y = 0; y <= 100; y += 20){
+    //Serial.print("d");
+    //Serial.println(pwr2screen(y));
     for (x = X_OFFSET; x <= 100+ X_OFFSET; x += 2)
       GLCD.SetDot(x,vswr2screen(y),BLACK);
   }
@@ -188,7 +183,6 @@ void plotPower(){
     for (y =0; y <= 50; y += 2)
       GLCD.SetDot(freq2screen(f),y+Y_OFFSET,BLACK);
   }
-
 
   for (y = -80; y <= -20; y += 20){
     itoa(y, p, 10);
@@ -206,15 +200,15 @@ void plotPower(){
   Serial.print("step "); Serial.println(stepSize);
 
   for (f = f1; f < f2; f += stepSize){
-    takeReading(f);
+    setOscillators(f);
     delay(50);
     //now take the readings
     analogRead(DBM_READING);
     analogRead(DBM_READING);
     analogRead(DBM_READING);
 
-
-   int r = analogRead(DBM_READING)/5 + dbmOffset;
+    //int r = readDB() + dbmOffset;                // original method
+    int r = readDbm();                             // LUT corrected dBm
     plot_readings[i] = r;
 
     //Output readings to serial
@@ -230,25 +224,14 @@ void plotPower(){
   int current_pos = 50;
 
   powerHeading(current_pos);
-  while (!btnDown()){
-    i = enc_read();
+  while (!button_pressed){
+    i = readEncoder();
 
     if ((i < 0 && current_pos + i >= 0) ||
       (i > 0 && current_pos + i <= 100)){
       current_pos += i;
       powerHeading(current_pos);
-
-/*      GLCD.FillRect(0,0,127,12, WHITE);
-
-      freqtoa(f1 + (stepSize * current_pos), p);
-      GLCD.DrawString(p, 0, 0);
-      sprintf(p, "%ddbm", plot_readings[current_pos]);
-      GLCD.DrawString(p, 80, 0);
-      GLCD.DrawLine(current_pos+ X_OFFSET, 8, current_pos + X_OFFSET,11); */
     }
   }
-
-  while(btnDown())
-    delay(100);
+  button_pressed = false;
 }
-
